@@ -69,12 +69,19 @@ func (g *Generator) collectImportedPath() map[string]struct{} {
 	return imported
 }
 
-func (g *Generator) collectHasPersistent() bool {
-	for _, fs := range g.flagSets {
-		for _, f := range fs.flags {
-			if f.persistent {
-				return true
-			}
+func (g *Generator) collectHasNonPersistent(fs *FlagSet) bool {
+	for _, f := range fs.flags {
+		if !f.persistent {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Generator) collectHasPersistent(fs *FlagSet) bool {
+	for _, f := range fs.flags {
+		if f.persistent {
+			return true
 		}
 	}
 	return false
@@ -92,8 +99,10 @@ func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
 	} else {
 		g.Printf("func Prepare%sFlags(c *cobra.Command) {\n", fs.typeName)
 	}
-	g.Printf("  fs := c.Flags()\n")
-	if g.collectHasPersistent() {
+	if g.collectHasNonPersistent(fs) {
+		g.Printf("  fs := c.Flags()\n")
+	}
+	if g.collectHasPersistent(fs) {
 		g.Printf("  ps := c.PersistentFlags()\n")
 	}
 	for _, f := range fs.flags {
