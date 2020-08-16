@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-//go:generate habu -type Options -viper true
+//go:generate habu -type Options
 
 type Options struct {
 	Config           string `hb_short:"_" hb_long:"_" hb_env:"_" hb_persistent:"true" hb_usage:"config file"`

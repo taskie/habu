@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-//go:generate habu -type Options -viper true
+//go:generate habu -type Options
 
 type Options struct {
 	Long       string `hb_long:"some-long"`

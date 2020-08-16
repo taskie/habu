@@ -34,7 +34,7 @@ func (g *Generator) Printf(format string, args ...interface{}) {
 func (g *Generator) Generate() []byte {
 	imported := g.collectImportedPath()
 	imported["github.com/spf13/cobra"] = struct{}{}
-	if *viper != "" {
+	if *viper != "false" {
 		imported["github.com/spf13/viper"] = struct{}{}
 	}
 	g.generateHeader(imported)
@@ -87,7 +87,7 @@ func (g *Generator) generateBody() {
 }
 
 func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
-	if *viper != "" {
+	if *viper != "false" {
 		g.Printf("func Prepare%sFlags(c *cobra.Command, v *viper.Viper) {\n", fs.typeName)
 	} else {
 		g.Printf("func Prepare%sFlags(c *cobra.Command) {\n", fs.typeName)
@@ -138,7 +138,7 @@ func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 			log.Fatalf("unsupported field type: %s", f.fieldType)
 		}
 	}
-	if *viper != "" {
+	if *viper != "false" {
 		configName := f.viper
 		if configName == "" {
 			configName = f.fieldName

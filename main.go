@@ -16,7 +16,7 @@ import (
 var (
 	typeNames = flag.String("type", "", "comma-separated list of type names; must be set")
 	output    = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
-	viper     = flag.String("viper", "", "use viper")
+	viper     = flag.String("viper", "", "viper mode")
 	debug     = flag.Bool("debug", false, "show debug output")
 )
 
