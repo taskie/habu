@@ -89,11 +89,52 @@ func (g *Generator) collectHasPersistent(fs *FlagSet) bool {
 
 func (g *Generator) generateBody() {
 	for _, fs := range g.flagSets {
-		g.generatePrepareFlagsFunc(fs)
+		flags := make([]*Flag, 0)
+		for _, f := range fs.flags {
+			flags = append(flags, g.normalizeFlag(f))
+		}
+		normFs := FlagSet{
+			typeName: fs.typeName,
+			flags:    flags,
+		}
+		g.generatePrepareFlagsFunc(&normFs)
 		if *viper != "false" {
-			g.generateBindFlagsFunc(fs)
+			g.generateBindFlagsFunc(&normFs)
 		}
 	}
+}
+
+func (g *Generator) convertCase(s, mode string) string {
+	switch strings.ToLower(mode) {
+	case "camel":
+		return strcase.ToCamel(s)
+	case "lowercamel":
+		return strcase.ToLowerCamel(s)
+	case "snake":
+		return strcase.ToSnake(s)
+	case "screamingsnake":
+		return strcase.ToScreamingSnake(s)
+	case "kebab":
+		return strcase.ToKebab(s)
+	case "upper":
+		return strings.ToUpper(s)
+	case "lower":
+		return strings.ToLower(s)
+	default:
+		return s
+	}
+
+}
+
+func (g *Generator) normalizeFlag(f *Flag) *Flag {
+	normF := *f
+	if normF.name == "_" {
+		normF.name = g.convertCase(f.fieldName, *longCase)
+	}
+	if normF.shorthand == "_" {
+		normF.shorthand = g.convertCase(f.fieldName[0:1], *shortCase)
+	}
+	return &normF
 }
 
 func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
@@ -113,13 +154,7 @@ func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
 
 func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 	name := f.name
-	if name == "_" {
-		name = strcase.ToKebab(f.fieldName)
-	}
 	shorthand := f.shorthand
-	if shorthand == "_" {
-		shorthand = name[0:1]
-	}
 	flags := "fs"
 	if f.persistent {
 		flags = "ps"
@@ -166,13 +201,6 @@ func (g *Generator) generateBindFlagsFunc(fs *FlagSet) {
 
 func (g *Generator) generateFlagBinder(fs *FlagSet, f *Flag) {
 	name := f.name
-	if name == "_" {
-		name = strcase.ToKebab(f.fieldName)
-	}
-	shorthand := f.shorthand
-	if shorthand == "_" {
-		shorthand = name[0:1]
-	}
 	flags := "fs"
 	if f.persistent {
 		flags = "ps"
@@ -184,7 +212,12 @@ func (g *Generator) generateFlagBinder(fs *FlagSet, f *Flag) {
 	g.Printf("v.BindPFlag(%#v, %s.Lookup(%#v))\n", configName, flags, name)
 	if f.env != "" {
 		if f.env == "_" {
-			g.Printf("v.BindEnv(%#v)\n", configName)
+			if *envPrefix != "" || *envCase != "" {
+				env := *envPrefix + g.convertCase(f.fieldName, *envCase)
+				g.Printf("v.BindEnv(%#v, %#v)\n", configName, env)
+			} else {
+				g.Printf("v.BindEnv(%#v)\n", configName)
+			}
 		} else {
 			g.Printf("v.BindEnv(%#v, %#v)\n", configName, f.env)
 		}

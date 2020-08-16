@@ -17,6 +17,10 @@ var (
 	typeNames = flag.String("type", "", "comma-separated list of type names; must be set")
 	output    = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
 	viper     = flag.String("viper", "", "viper mode")
+	longCase  = flag.String("longCase", "kebab", "auto case conversion for long options")
+	shortCase = flag.String("shortCase", "lower", "auto case conversion for short options")
+	envCase   = flag.String("envCase", "", "auto case conversion for environment variables")
+	envPrefix = flag.String("envPrefix", "", "auto prefix for environment variables")
 	debug     = flag.Bool("debug", false, "show debug output")
 )
 
