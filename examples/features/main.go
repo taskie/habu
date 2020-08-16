@@ -29,7 +29,7 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("can't parse options: %s", err.Error())
 	}
-	log.Printf("%+v", options)
+	log.Printf("%+v", &options)
 }
 
 func main() {
@@ -37,8 +37,9 @@ func main() {
 		Use: "features",
 		Run: run,
 	}
+	PrepareOptionsFlags(&cmd)
 	viper.SetEnvPrefix("FEATURES")
-	PrepareOptionsFlags(&cmd, viper.GetViper())
+	BindOptionsFlags(&cmd, viper.GetViper())
 	err := cmd.Execute()
 	if err != nil {
 		log.Fatal(err)

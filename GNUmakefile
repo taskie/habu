@@ -12,4 +12,4 @@ install:
 
 rebuild-examples:
 	$(MAKE) -C examples/features rebuild
-	$(MAKE) -C examples/fwv rebuild
+	$(MAKE) -C examples/subcommands rebuild

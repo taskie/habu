@@ -1,4 +1,4 @@
-module github.com/taskie/habu/examples/fwv
+module github.com/taskie/habu/examples/subcommands
 
 go 1.14
 
