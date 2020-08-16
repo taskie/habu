@@ -109,6 +109,7 @@ func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
 		g.generateFlagSetter(fs, f)
 	}
 	g.Printf("}\n")
+	g.Printf("\n")
 }
 
 func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
