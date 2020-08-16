@@ -27,7 +27,7 @@ func run(cmd *cobra.Command, args []string) {
 	options := Options{}
 	err := viper.Unmarshal(&options)
 	if err != nil {
-		log.Fatal("can't parse options: %s", err.Error())
+		log.Fatalf("can't parse options: %s", err.Error())
 	}
 	log.Printf("%+v", options)
 }
