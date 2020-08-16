@@ -86,18 +86,22 @@ func pityRun(cmd *cobra.Command, args []string) {
 func main() {
 	cmd := cobra.Command{
 		Use: "subcommands",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			callParentPersistentPreRun(cmd)
+			viper.SetEnvPrefix("subcommands")
+			BindOptionsFlags(cmd, viper.GetViper())
+		},
 	}
 	PrepareOptionsFlags(&cmd)
-	viper.SetEnvPrefix("SUBCOMMANDS")
-	BindOptionsFlags(&cmd, viper.GetViper())
 
-	// You must use PreRun to define flags of a subcommand.
+	// You must use PreRun or PersistentPreRun to define flags of a subcommand.
 	// See: https://github.com/spf13/viper/issues/233
 
 	fwvCmd := cobra.Command{
 		Use: "fwv",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.SetEnvPrefix("FWV")
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			callParentPersistentPreRun(cmd)
+			viper.SetEnvPrefix("fwv")
 			BindFwvOptionsFlags(cmd, viper.GetViper())
 		},
 		Run: fwvRun,
@@ -107,8 +111,9 @@ func main() {
 
 	jcCmd := cobra.Command{
 		Use: "jc",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.SetEnvPrefix("JC")
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			callParentPersistentPreRun(cmd)
+			viper.SetEnvPrefix("jc")
 			BindJcOptionsFlags(cmd, viper.GetViper())
 		},
 		Run: jcRun,
@@ -118,8 +123,9 @@ func main() {
 
 	pityCmd := cobra.Command{
 		Use: "pity",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.SetEnvPrefix("PITY")
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			callParentPersistentPreRun(cmd)
+			viper.SetEnvPrefix("pity")
 			BindPityOptionsFlags(cmd, viper.GetViper())
 		},
 		Run: pityRun,
@@ -127,8 +133,30 @@ func main() {
 	PreparePityOptionsFlags(&pityCmd)
 	cmd.AddCommand(&pityCmd)
 
-	err := cmd.Execute()
+	cmd.Execute()
+}
+
+func callParentPersistentPreRun(cmd *cobra.Command) {
+	err := callParentPersistentPreRunE(cmd)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func callParentPersistentPreRunE(cmd *cobra.Command) error {
+	// See: https://github.com/spf13/cobra/issues/252
+	// See: https://github.com/spf13/cobra/blob/v1.0.0/command.go#L819
+	for p := cmd.Parent(); p != nil; p = p.Parent() {
+		if p.PersistentPreRunE != nil {
+			err := p.PersistentPreRunE(p, []string{})
+			if err != nil {
+				return err
+			}
+			break
+		} else if p.PersistentPreRun != nil {
+			p.PersistentPreRun(p, []string{})
+			break
+		}
+	}
+	return nil
 }

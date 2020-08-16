@@ -40,8 +40,5 @@ func main() {
 	PrepareOptionsFlags(&cmd)
 	viper.SetEnvPrefix("FEATURES")
 	BindOptionsFlags(&cmd, viper.GetViper())
-	err := cmd.Execute()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cmd.Execute()
 }
