@@ -69,6 +69,17 @@ func (g *Generator) collectImportedPath() map[string]struct{} {
 	return imported
 }
 
+func (g *Generator) collectHasPersistent() bool {
+	for _, fs := range g.flagSets {
+		for _, f := range fs.flags {
+			if f.persistent {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (g *Generator) generateBody() {
 	for _, fs := range g.flagSets {
 		g.generatePrepareFlagsFunc(fs)
@@ -80,6 +91,10 @@ func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
 		g.Printf("func Prepare%sFlags(c *cobra.Command, v *viper.Viper) {\n", fs.typeName)
 	} else {
 		g.Printf("func Prepare%sFlags(c *cobra.Command) {\n", fs.typeName)
+	}
+	g.Printf("  fs := c.Flags()\n")
+	if g.collectHasPersistent() {
+		g.Printf("  ps := c.PersistentFlags()\n")
 	}
 	for _, f := range fs.flags {
 		g.generateFlagSetter(fs, f)
@@ -96,16 +111,16 @@ func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 	if shorthand == "_" {
 		shorthand = name[0:1]
 	}
-	flags := "Flags"
+	flags := "fs"
 	if f.persistent {
-		flags = "PersistentFlags"
+		flags = "ps"
 	}
 	switch f.fieldType {
 	case String, Int, Bool, Duration:
 		if f.shorthand != "" {
-			g.Printf("	c.%s().%sP(%#v, %#v, %#v, %#v)\n", flags, strings.Title(f.fieldType.String()), name, shorthand, f.value, f.usage)
+			g.Printf("	%s.%sP(%#v, %#v, %#v, %#v)\n", flags, strings.Title(f.fieldType.String()), name, shorthand, f.value, f.usage)
 		} else {
-			g.Printf("	c.%s().%s(%#v, %#v, %#v)\n", flags, strings.Title(f.fieldType.String()), name, f.value, f.usage)
+			g.Printf("	%s.%s(%#v, %#v, %#v)\n", flags, strings.Title(f.fieldType.String()), name, f.value, f.usage)
 		}
 	default:
 		if f.parse != "" {
@@ -115,9 +130,9 @@ func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 				parse = splitted[1]
 			}
 			if f.shorthand != "" {
-				g.Printf("	c.%s().%sP(%#v, %#v, %s(%#v), %#v)\n", flags, strings.Title(f.fieldType.String()), name, shorthand, parse, f.value, f.usage)
+				g.Printf("	%s.%sP(%#v, %#v, %s(%#v), %#v)\n", flags, strings.Title(f.fieldType.String()), name, shorthand, parse, f.value, f.usage)
 			} else {
-				g.Printf("	c.%s().%s(%#v, %s(%#v), %#v)\n", flags, strings.Title(f.fieldType.String()), name, parse, f.value, f.usage)
+				g.Printf("	%s.%s(%#v, %s(%#v), %#v)\n", flags, strings.Title(f.fieldType.String()), name, parse, f.value, f.usage)
 			}
 		} else {
 			log.Fatalf("unsupported field type: %s", f.fieldType)
@@ -128,7 +143,7 @@ func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 		if configName == "" {
 			configName = f.fieldName
 		}
-		g.Printf("v.BindPFlag(%#v, c.%s().Lookup(%#v))\n", configName, flags, name)
+		g.Printf("v.BindPFlag(%#v, %s.Lookup(%#v))\n", configName, flags, name)
 		if f.env != "" {
 			if f.env == "_" {
 				g.Printf("v.BindEnv(%#v)\n", configName)
