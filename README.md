@@ -4,7 +4,7 @@ Generate configurations for [cobra](https://github.com/spf13/cobra) and [viper](
 
 ## Examples
 
-* [Source: examples/features/features.go](examples/features/features.go)
+* [Source: examples/features/main.go](examples/features/main.go)
     * [Generated: examples/features/options_habu.go](examples/features/options_habu.go)
 
 ## License
