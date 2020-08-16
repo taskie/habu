@@ -90,15 +90,14 @@ func (g *Generator) collectHasPersistent(fs *FlagSet) bool {
 func (g *Generator) generateBody() {
 	for _, fs := range g.flagSets {
 		g.generatePrepareFlagsFunc(fs)
+		if *viper != "false" {
+			g.generateBindFlagsFunc(fs)
+		}
 	}
 }
 
 func (g *Generator) generatePrepareFlagsFunc(fs *FlagSet) {
-	if *viper != "false" {
-		g.Printf("func Prepare%sFlags(c *cobra.Command, v *viper.Viper) {\n", fs.typeName)
-	} else {
-		g.Printf("func Prepare%sFlags(c *cobra.Command) {\n", fs.typeName)
-	}
+	g.Printf("func Prepare%sFlags(c *cobra.Command) {\n", fs.typeName)
 	if g.collectHasNonPersistent(fs) {
 		g.Printf("  fs := c.Flags()\n")
 	}
@@ -148,18 +147,46 @@ func (g *Generator) generateFlagSetter(fs *FlagSet, f *Flag) {
 			log.Fatalf("unsupported field type: %s", f.fieldType)
 		}
 	}
-	if *viper != "false" {
-		configName := f.viper
-		if configName == "" {
-			configName = f.fieldName
-		}
-		g.Printf("v.BindPFlag(%#v, %s.Lookup(%#v))\n", configName, flags, name)
-		if f.env != "" {
-			if f.env == "_" {
-				g.Printf("v.BindEnv(%#v)\n", configName)
-			} else {
-				g.Printf("v.BindEnv(%#v, %#v)\n", configName, f.env)
-			}
+}
+
+func (g *Generator) generateBindFlagsFunc(fs *FlagSet) {
+	g.Printf("func Bind%sFlags(c *cobra.Command, v *viper.Viper) {\n", fs.typeName)
+	if g.collectHasNonPersistent(fs) {
+		g.Printf("  fs := c.Flags()\n")
+	}
+	if g.collectHasPersistent(fs) {
+		g.Printf("  ps := c.PersistentFlags()\n")
+	}
+	for _, f := range fs.flags {
+		g.generateFlagBinder(fs, f)
+	}
+	g.Printf("}\n")
+	g.Printf("\n")
+}
+
+func (g *Generator) generateFlagBinder(fs *FlagSet, f *Flag) {
+	name := f.name
+	if name == "_" {
+		name = strcase.ToKebab(f.fieldName)
+	}
+	shorthand := f.shorthand
+	if shorthand == "_" {
+		shorthand = name[0:1]
+	}
+	flags := "fs"
+	if f.persistent {
+		flags = "ps"
+	}
+	configName := f.viper
+	if configName == "" {
+		configName = f.fieldName
+	}
+	g.Printf("v.BindPFlag(%#v, %s.Lookup(%#v))\n", configName, flags, name)
+	if f.env != "" {
+		if f.env == "_" {
+			g.Printf("v.BindEnv(%#v)\n", configName)
+		} else {
+			g.Printf("v.BindEnv(%#v, %#v)\n", configName, f.env)
 		}
 	}
 }
